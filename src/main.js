@@ -6,6 +6,8 @@ var RenderMixin = require('./RenderMixin.js');
 
 var flux = {};
 
+var look_mom;
+
 function mergeStore (mixins, source) {
 
   source.actions = source.actions || [];
@@ -73,7 +75,7 @@ function mergeStore (mixins, source) {
     if (!source[action.handlerName]) {
       throw new Error('There is no handler for action: ' + action);
     }
-    action.on('trigger', source[action.handlerName].bind(source));
+    action.registerCallback.call(source, source[action.handlerName].bind(source));
   });
 
   // Register exports

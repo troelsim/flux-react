@@ -10,23 +10,77 @@ var EventEmitter = require('eventemitter2').EventEmitter2 || require('eventemitt
 var safeDeepClone = require('./safeDeepClone.js');
 
 var createActionFunction = function (actionName) {
+  // Maps from ids to callbacks and their states
+  var callbacks = {};
+  var isHandled = {};
+  var isPending = {};
+  var isDispatching = false;
+  var payload;
+
+  function invokeCallback(id){
+    isPending[id] = true;
+    callbacks[id].apply(undefined, payload);
+    isHandled[id] = true;
+  }
 
   // Create the action function
   var fn = function () {
+    if (isDispatching){
+      throw new Error('The action ' + fn.handlerName + ' is already being dispatched.');
+    }
 
     // Grab all the arguments and convert to array
     var args = safeDeepClone('[Circular]', [], Array.prototype.slice.call(arguments, 0));
 
-    if (!fn._events) {
-      throw new Error('You are triggering the action: ' + fn.handlerName + ', and nobody is listening to it yet. Remember to load up the store first');
+    // Start bookkeeping
+    for (var id in callbacks) {
+      isHandled[id] = false;
+      isPending[id] = false;
     }
+    isDispatching = true;
+    payload = args;
 
-    // Merge arguments array with "trigger", which is the
-    // event that will be triggered, passing the original arguments
-    // as arguments to the "trigger" event
-    args = ['trigger'].concat(args);
-    fn.emit.apply(fn, args);
 
+    try{
+      for (var id in callbacks) {
+        if (isPending[id]) {
+          continue;
+        }
+        invokeCallback(id);
+      }
+    }finally{
+      isDispatching = false;
+      payload = undefined;
+    }
+  };
+
+  fn.waitFor = function(ids){
+    // Take a list of callback ids and execute them first
+    if (!isDispatching){
+      throw new Error('waitFor must be called while dispatching an actions, sure you called it from an action handler?');
+    }
+    for (var ii = 0; ii < ids.length; i++) {
+      var id = ids[ii];
+      if (isPending[id]){
+        if (isHandled[id]) {
+          throw new Error('Circular dependency detected while waiting for ' + id);
+        }
+        continue;
+      }
+      if (!callbacks[id]) {
+        throw new Error('waitFor: No such callback registered: ' + id);
+      }
+      invokeCallback(id);
+    }
+  };
+
+  fn.registerCallback = function(callback){
+    // Caller should bind this with the registering store.
+    if (!this.storeName){
+      throw new Error('registerCallback: registering store must have a storeName attribute');
+    }
+    var id = this.storeName;
+    callbacks[id] = callback;
   };
 
   var emitter = new EventEmitter();
