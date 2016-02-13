@@ -54,9 +54,7 @@ function mergeStore (mixins, source) {
 
   source.emit = function () {
     var args = arguments;
-    setTimeout(function () { // Async to avoid running within render of component
-      exports.emit.apply(exports, args);
-    }, 0);
+    exports.emit.apply(exports, args);
   };
 
   exports.addChangeListener = function (callback) {
@@ -84,6 +82,9 @@ function mergeStore (mixins, source) {
       return safeDeepClone('[Circular]', [], source.exports[key].apply(source, arguments));
     };
   });
+
+  // Expose the store name
+  exports.storeName = source.storeName;
 
   return exports;
 

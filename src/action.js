@@ -54,15 +54,16 @@ var createActionFunction = function (actionName) {
     }
   };
 
-  fn.waitFor = function(ids){
-    // Take a list of callback ids and execute them first
+  fn.waitFor = function(stores){
+    // Take a list of stores and execute their callbacks first
+    var ids = stores.map(function(s) { return s.storeName });
     if (!isDispatching){
       throw new Error('waitFor must be called while dispatching an actions, sure you called it from an action handler?');
     }
-    for (var ii = 0; ii < ids.length; i++) {
+    for (var ii = 0; ii < ids.length; ii++) {
       var id = ids[ii];
       if (isPending[id]){
-        if (isHandled[id]) {
+        if (!isHandled[id]) {
           throw new Error('Circular dependency detected while waiting for ' + id);
         }
         continue;
