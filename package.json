@@ -1,6 +1,6 @@
 {
   "name": "flux-react",
-  "version": "2.6.8",
+  "version": "2.6.9",
   "description": "A React JS FLUX expansion",
   "main": "./src/main.js",
   "scripts": {
@@ -32,6 +32,6 @@
     "eventemitter2": "^0.4.14"
   },
   "peerDependencies": {
-    "react": "^0.14.0"
+    "react": "^15.3"
   }
 }
